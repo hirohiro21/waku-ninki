@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>枠番人気変換ツール</title>
+<style>
+:root{
+  --bg:#0f0f0f;--bg2:#181818;--bg3:#222;--bg4:#2a2a2a;
+  --bd:#2e2e2e;--bd2:#3a3a3a;
+  --tx:#e8e8e8;--tx2:#999;--tx3:#555;
+  --gn:#2d6a4f;--gnt:#d8f3dc;
+  --rd:#7b2d2d;--rdt:#ffd6d6;
+  --go:#c9a84c;--go2:#e8c96a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--tx);font-family:'Helvetica Neue',Helvetica,sans-serif;font-size:13px;line-height:1.6;padding:16px;max-width:480px;margin:auto;}
+h1{font-size:18px;color:var(--go);text-align:center;margin-bottom:4px;letter-spacing:1px;}
+.sub{text-align:center;color:var(--tx2);font-size:11px;margin-bottom:20px;}
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px;}
+.ctitle{font-size:10px;text-transform:uppercase;color:var(--tx2);letter-spacing:1px;margin-bottom:10px;}
+textarea{width:100%;height:200px;background:var(--bg3);border:1px solid var(--bd2);border-radius:7px;color:var(--tx);font-size:11px;font-family:monospace;padding:9px;resize:vertical;outline:none;}
+textarea:focus{border-color:var(--go);}
+.btn{display:block;width:100%;padding:13px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;margin-bottom:8px;transition:.15s;}
+.btn-gold{background:var(--go);color:#000;}
+.btn-gold:hover{opacity:.85;}
+.btn-ghost{background:transparent;border:1px solid var(--bd2);color:var(--tx2);}
+.btn-ghost:hover{border-color:var(--go);color:var(--go);}
+.status{border-radius:7px;padding:10px 12px;font-size:12px;margin-top:8px;display:none;}
+.s-ok{background:rgba(45,106,79,.25);color:#d8f3dc;border:1px solid rgba(45,106,79,.4);}
+.s-warn{background:rgba(123,45,45,.2);color:#ffd6d6;border:1px solid rgba(123,45,45,.3);}
+
+/* 会場タブ */
+.venue-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.venue-pill{padding:7px 12px;font-size:12px;border-radius:8px;cursor:pointer;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx2);font-weight:600;transition:.15s;}
+.venue-pill.active{background:var(--go);color:#000;border-color:var(--go);}
+.venue-add{padding:7px 12px;font-size:12px;border-radius:8px;cursor:pointer;border:1px dashed var(--bd2);background:transparent;color:var(--tx3);}
+.venue-add:hover{border-color:var(--go);color:var(--go);}
+.venue-input{display:flex;gap:6px;margin-bottom:10px;}
+.venue-input input{flex:1;background:var(--bg3);border:1px solid var(--bd2);border-radius:6px;color:var(--tx);font-size:12px;padding:7px 9px;outline:none;}
+.venue-input input:focus{border-color:var(--go);}
+.venue-del{font-size:10px;color:#c97a7a;cursor:pointer;margin-left:4px;}
+
+/* CSVボタン行 */
+.csv-row{display:flex;gap:7px;margin-top:0;}
+.csv-row .btn{margin-bottom:0;flex:1;}
+
+/* レース番号セレクタ */
+.race-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.race-pill{padding:6px 0;width:40px;text-align:center;font-size:12px;border-radius:8px;cursor:pointer;border:1px solid var(--bd2);background:var(--bg3);color:var(--tx2);transition:.15s;font-weight:600;}
+.race-pill.active{background:var(--go);color:#000;border-color:var(--go);}
+.race-pill.done{border-color:rgba(45,106,79,.6);color:#7fc99b;}
+.race-pill.done.active{background:var(--go);color:#000;}
+
+/* 結果リスト（単発結果） */
+.result{display:none;}
+.franking{display:flex;flex-direction:column;gap:7px;}
+.frow{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--bd2);border-radius:9px;padding:10px 12px;}
+.frow.top{border-color:var(--go);background:rgba(201,168,76,.1);}
+.frank{width:34px;height:34px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--tx2);flex-shrink:0;}
+.frow.top .frank{background:var(--go);color:#000;}
+.fframe{font-size:22px;font-weight:800;color:var(--go);width:54px;text-align:center;flex-shrink:0;}
+.fmeta{flex:1;font-size:10px;color:var(--tx3);line-height:1.5;}
+.fmeta b{color:var(--tx2);}
+
+/* 1R〜12R 一覧グリッド */
+.rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.rbox{background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:10px;cursor:pointer;transition:.15s;}
+.rbox:hover{border-color:var(--go);}
+.rbox.empty{opacity:.4;}
+.rbox .rn{font-size:11px;color:var(--go);font-weight:700;margin-bottom:6px;}
+.rbox .rseq{font-size:13px;font-weight:700;color:var(--tx);letter-spacing:.5px;line-height:1.6;}
+.rbox .rseq .num{color:var(--go);}
+.rbox .rempty{font-size:11px;color:var(--tx3);}
+
+.note{font-size:10px;color:var(--tx3);margin-top:8px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<h1>🎯 枠番人気変換ツール</h1>
+<p class="sub">枠連オッズ表 → 各枠の単独人気を算出</p>
+
+<div class="card">
+  <div class="ctitle">会場選択</div>
+  <div class="venue-row" id="venuePills"></div>
+  <div class="venue-input" id="venueAddBox" style="display:none;">
+    <input type="text" id="venueNameInput" placeholder="会場名（例：東京）">
+    <button class="btn btn-gold" style="width:auto;margin:0;padding:7px 14px;" onclick="confirmAddVenue()">追加</button>
+  </div>
+  <button class="btn btn-ghost" style="margin:0;" onclick="showVenueAdd()">＋ 会場を追加</button>
+</div>
+
+<div class="card">
+  <div class="ctitle">データ保存・読み込み（1日分・全会場まとめて）</div>
+  <div class="csv-row">
+    <button class="btn btn-gold" onclick="exportCSV()">💾 CSVに保存</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('csvImport').click()">📂 CSVを読み込む</button>
+  </div>
+  <input type="file" id="csvImport" accept=".csv" style="display:none;" onchange="importCSV(this)">
+  <div id="csvStatus" class="status"></div>
+</div>
+
+<div class="card">
+  <div class="ctitle">レース選択（<span id="venueLabel">東京</span>）</div>
+  <div class="race-pills" id="racePills"></div>
+</div>
+
+<div class="card">
+  <div class="ctitle">STEP 1：<span id="raceLabel">1R</span>の枠連オッズ表を貼り付け</div>
+  <textarea id="ta" placeholder="人気	組番	オッズ
+1	2-5	7.1
+2	2-3	8.6
+3	1-2	8.9
+...
+の形式で貼り付けてください（人気順オッズ表）"></textarea>
+  <div class="btn-row" style="display:flex;gap:8px;margin-top:8px;">
+    <button class="btn btn-gold" style="margin:0;" onclick="runConvert()">▶ このレースの枠番人気を算出する</button>
+  </div>
+  <button class="btn btn-ghost" onclick="clearCurrent()">このレースをクリア</button>
+  <button class="btn btn-ghost" onclick="clearAll()" style="color:#c97a7a;">この会場を全クリア</button>
+  <div id="st" class="status"></div>
+</div>
+
+<div class="result" id="result">
+  <div class="card">
+    <div class="ctitle"><span id="resultLabel">1R</span> 枠番 単独人気（1〜8枠）</div>
+    <div class="franking" id="frankList"></div>
+    <div class="note">① 各枠の「出現順位リスト」を作成（昇順）<br>② 1位が同じなら2位、それも同じなら3位…と早く出た枠を上位人気に決定（8枠全てを同じルールで比較）</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ctitle"><span id="gridVenueLabel">東京</span>　1R〜12R 枠番人気 一覧</div>
+  <div class="rgrid" id="raceGrid"></div>
+</div>
+
+<script>
+let venues = ['東京'];
+let currentVenue = '東京';
+let currentRace = 1;
+const allData = { '東京': {} }; // { venueName: {1:[frames], 2:[frames], ...} }
+
+function initVenuePills(){
+  const el = document.getElementById('venuePills');
+  el.innerHTML = '';
+  venues.forEach(v=>{
+    const wrap = document.createElement('span');
+    wrap.style.display='inline-flex';
+    wrap.style.alignItems='center';
+    const btn = document.createElement('button');
+    btn.className = 'venue-pill' + (v===currentVenue?' active':'');
+    btn.textContent = v;
+    btn.onclick = () => selectVenue(v);
+    wrap.appendChild(btn);
+    if(venues.length>1){
+      const del = document.createElement('span');
+      del.className = 'venue-del';
+      del.textContent = '×';
+      del.onclick = (e) => { e.stopPropagation(); deleteVenue(v); };
+      wrap.appendChild(del);
+    }
+    el.appendChild(wrap);
+  });
+}
+
+function showVenueAdd(){
+  document.getElementById('venueAddBox').style.display = 'flex';
+  document.getElementById('venueNameInput').value = '';
+  document.getElementById('venueNameInput').focus();
+}
+
+function confirmAddVenue(){
+  const name = document.getElementById('venueNameInput').value.trim();
+  if(!name){ return; }
+  if(venues.includes(name)){ alert('その会場名は既にあります'); return; }
+  venues.push(name);
+  allData[name] = {};
+  document.getElementById('venueAddBox').style.display = 'none';
+  selectVenue(name);
+}
+
+function deleteVenue(v){
+  if(!confirm(v+'の全データを削除しますか？')) return;
+  venues = venues.filter(x=>x!==v);
+  delete allData[v];
+  if(currentVenue===v){
+    currentVenue = venues[0] || '東京';
+    if(!venues.length){ venues=['東京']; allData['東京']={}; currentVenue='東京'; }
+  }
+  selectVenue(currentVenue);
+}
+
+function selectVenue(v){
+  currentVenue = v;
+  currentRace = 1;
+  document.getElementById('venueLabel').textContent = v;
+  document.getElementById('gridVenueLabel').textContent = v;
+  document.getElementById('raceLabel').textContent = '1R';
+  document.getElementById('ta').value = '';
+  document.getElementById('st').style.display = 'none';
+  initVenuePills();
+  initRacePills();
+  if(allData[v][1]){ showResult(1); } else { document.getElementById('result').style.display='none'; }
+  renderRaceGrid();
+}
+
+function initRacePills(){
+  const el = document.getElementById('racePills');
+  el.innerHTML = '';
+  const rd = allData[currentVenue];
+  for(let r=1; r<=12; r++){
+    const btn = document.createElement('button');
+    btn.className = 'race-pill' + (r===currentRace?' active':'') + (rd[r]?' done':'');
+    btn.textContent = r+'R';
+    btn.onclick = () => selectRace(r);
+    el.appendChild(btn);
+  }
+}
+
+function selectRace(r){
+  currentRace = r;
+  document.getElementById('raceLabel').textContent = r+'R';
+  document.getElementById('ta').value = '';
+  document.getElementById('st').style.display = 'none';
+  const rd = allData[currentVenue];
+  if(rd[r]){
+    showResult(r);
+  } else {
+    document.getElementById('result').style.display = 'none';
+  }
+  initRacePills();
+}
+
+function showSt(id,msg,type){
+  const el=document.getElementById(id);
+  el.style.display='block';
+  el.className='status '+(type==='ok'?'s-ok':'s-warn');
+  el.textContent=msg;
+}
+
+function clearCurrent(){
+  delete allData[currentVenue][currentRace];
+  document.getElementById('ta').value='';
+  document.getElementById('st').style.display='none';
+  document.getElementById('result').style.display='none';
+  initRacePills();
+  renderRaceGrid();
+}
+
+function clearAll(){
+  if(!confirm(currentVenue+'の全レースデータを削除しますか？')) return;
+  allData[currentVenue] = {};
+  document.getElementById('ta').value='';
+  document.getElementById('st').style.display='none';
+  document.getElementById('result').style.display='none';
+  initRacePills();
+  renderRaceGrid();
+}
+
+function parseOddsTable(txt){
+  const lines = txt.replace(/\r/g,'').split('\n');
+  const rows = [];
+  lines.forEach(line=>{
+    const l = line.trim();
+    if(!l) return;
+    const m = l.match(/^(\d+)[\t\s]+(\d)[-－](\d)[\t\s]+([\d.]+)/);
+    if(m){
+      const pop = parseInt(m[1]);
+      const a = parseInt(m[2]);
+      const b = parseInt(m[3]);
+      const odds = parseFloat(m[4]);
+      if(a>=1&&a<=8&&b>=1&&b<=8&&!isNaN(pop)){
+        rows.push({pop, a:Math.min(a,b), b:Math.max(a,b), odds});
+      }
+    }
+  });
+  rows.sort((x,y)=>x.pop-y.pop);
+  return rows;
+}
+
+function runConvert(){
+  const txt = document.getElementById('ta').value;
+  if(!txt.trim()){ showSt('st','オッズ表を貼り付けてください','warn'); return; }
+  const rows = parseOddsTable(txt);
+  if(rows.length < 5){ showSt('st','読み取れた組番が少なすぎます（5件以上必要）','warn'); return; }
+
+  // ① 各枠が出現した「人気順位」を全部記録し、昇順に並べる
+  const appear = {1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[]};
+  rows.forEach(r=>{ appear[r.a].push(r.pop); appear[r.b].push(r.pop); });
+  Object.values(appear).forEach(arr=>arr.sort((x,y)=>x-y));
+
+  // ② 辞書式比較：出現順位リストを先頭から順に比べ、早い段階で小さい順位が出た枠を上位とする
+  function lexCompare(a, b){
+    const len = Math.max(a.length, b.length);
+    for(let i=0;i<len;i++){
+      const av = a[i] !== undefined ? a[i] : Infinity;
+      const bv = b[i] !== undefined ? b[i] : Infinity;
+      if(av !== bv) return av-bv;
+    }
+    return 0;
+  }
+
+  const frames = [1,2,3,4,5,6,7,8];
+  frames.sort((a,b)=>lexCompare(appear[a], appear[b]));
+
+  // このレースの結果を保存
+  allData[currentVenue][currentRace] = frames;
+
+  showResult(currentRace, rows, appear);
+  showSt('st', `${currentVenue} ${currentRace}R：${rows.length}件の組番データを解析し、枠番人気を算出しました`, 'ok');
+  initRacePills();
+  renderRaceGrid();
+}
+
+function showResult(raceNum, rows, appear){
+  const frames = allData[currentVenue][raceNum];
+  if(!frames) return;
+  document.getElementById('resultLabel').textContent = raceNum+'R';
+
+  let html='';
+  frames.forEach((frame,idx)=>{
+    const rank = idx+1;
+    const isTop = idx===0;
+    let reasonHtml='';
+    if(appear){
+      const ranks = appear[frame];
+      if(isTop){
+        reasonHtml = `出現順位 <b>${ranks.slice(0,4).join('→')}</b>…と最も早い段階で出続けている → 軸枠`;
+      } else {
+        const axisFrame = frames[0];
+        const pairRow = rows ? rows.find(r=>(r.a===axisFrame&&r.b===frame)||(r.b===axisFrame&&r.a===frame)) : null;
+        if(pairRow){
+          reasonHtml = `${axisFrame}-${frame}が枠連<b>${pairRow.pop}位</b>（オッズ${pairRow.odds}）／単独出現順位 ${ranks.slice(0,4).join('→')}…`;
+        } else {
+          reasonHtml = `単独出現順位 <b>${ranks.slice(0,4).join('→')}</b>… で${rank}番目`;
+        }
+      }
+    } else {
+      reasonHtml = isTop ? '軸枠' : `${rank}番目`;
+    }
+    html += `<div class="frow ${isTop?'top':''}">
+      <div class="frank">${rank}</div>
+      <div class="fframe">${frame}枠</div>
+      <div class="fmeta">${reasonHtml}</div>
+    </div>`;
+  });
+  document.getElementById('frankList').innerHTML = html;
+  document.getElementById('result').style.display='block';
+}
+
+function renderRaceGrid(){
+  const el = document.getElementById('raceGrid');
+  el.innerHTML = '';
+  const rd = allData[currentVenue];
+  for(let r=1; r<=12; r++){
+    const box = document.createElement('div');
+    const frames = rd[r];
+    box.className = 'rbox' + (frames?'':' empty');
+    box.onclick = () => selectRace(r);
+    if(frames){
+      box.innerHTML = `<div class="rn">${r}R</div><div class="rseq">${frames.map(f=>`<span class="num">${f}</span>`).join('-')}</div>`;
+    } else {
+      box.innerHTML = `<div class="rn">${r}R</div><div class="rempty">未入力</div>`;
+    }
+    el.appendChild(box);
+  }
+}
+
+// ===== CSV保存・読み込み（1日分・全会場まとめて）=====
+function exportCSV(){
+  let hasData = false;
+  let csv = '会場,レース,1人気枠,2人気枠,3人気枠,4人気枠,5人気枠,6人気枠,7人気枠,8人気枠\n';
+  venues.forEach(v=>{
+    for(let r=1; r<=12; r++){
+      const frames = allData[v][r];
+      if(frames){
+        hasData = true;
+        csv += `${v},${r}R,${frames.join(',')}\n`;
+      }
+    }
+  });
+  if(!hasData){ showSt('csvStatus','保存するデータがありません','warn'); return; }
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date();
+  a.download = `waku_ninki_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showSt('csvStatus', `${venues.length}会場分を保存しました`, 'ok');
+}
+
+function importCSV(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    const newData = {};
+    const newVenues = [];
+    lines.slice(1).forEach(line=>{
+      const cols = line.split(',');
+      if(cols.length < 10) return;
+      const venue = cols[0].trim();
+      const raceStr = cols[1].trim();
+      const rNum = parseInt(raceStr.replace('R',''));
+      const frames = cols.slice(2,10).map(x=>parseInt(x.trim())).filter(x=>!isNaN(x));
+      if(!venue || isNaN(rNum) || frames.length < 8) return;
+      if(!newData[venue]){ newData[venue] = {}; newVenues.push(venue); }
+      newData[venue][rNum] = frames;
+    });
+    if(!newVenues.length){ showSt('csvStatus','CSVを読み込めませんでした','warn'); return; }
+    venues = newVenues;
+    Object.keys(allData).forEach(k=>delete allData[k]);
+    Object.assign(allData, newData);
+    currentVenue = venues[0];
+    currentRace = 1;
+    showSt('csvStatus', `${venues.length}会場分を読み込みました`, 'ok');
+    selectVenue(currentVenue);
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';
+}
+
+initVenuePills();
+initRacePills();
+renderRaceGrid();
+</script>
+</body>
+</html>
