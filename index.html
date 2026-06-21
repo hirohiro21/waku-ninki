@@ -74,6 +74,42 @@ textarea:focus{border-color:var(--go);}
 .rbox .rempty{font-size:11px;color:var(--tx3);}
 
 .note{font-size:10px;color:var(--tx3);margin-top:8px;line-height:1.6;}
+
+/* A/B/C群バッジ */
+.grp-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0;}
+.grp-A{background:#5c1010;color:#ffb3b3;}
+.grp-B{background:var(--gn);color:var(--gnt);}
+.grp-C{background:#3a3a00;color:#ffee88;}
+.grp-none{background:var(--bg4);color:var(--tx3);}
+
+/* 着順入力 */
+.finish-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.finish-box{flex:1;min-width:80px;}
+.finish-box label{font-size:10px;color:var(--tx2);display:block;margin-bottom:3px;}
+.finish-box input{width:100%;background:var(--bg3);border:1px solid var(--bd2);border-radius:6px;color:var(--tx);font-size:14px;padding:7px 8px;outline:none;text-align:center;}
+.finish-box input:focus{border-color:var(--go);}
+
+/* 着順結果表示 */
+.finish-result{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.finish-result-row{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;}
+.finish-result-row .ford{width:32px;font-size:12px;font-weight:700;color:var(--go);flex-shrink:0;}
+.finish-result-row .ffrm{font-size:18px;font-weight:800;color:var(--tx);width:46px;text-align:center;flex-shrink:0;}
+.finish-result-row .frank-sm{font-size:11px;color:var(--tx2);flex:1;}
+
+/* 馬番人気セクション */
+.uma-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px;}
+@media(max-width:480px){.uma-grid{grid-template-columns:repeat(4,1fr);}}
+.uma-cell{background:var(--bg3);border-radius:6px;padding:6px 4px;text-align:center;border:1px solid var(--bd);}
+.uma-cell .un{font-size:10px;color:var(--tx2);margin-bottom:2px;}
+.uma-cell .up{font-size:13px;font-weight:700;color:var(--tx);}
+.uma-cell.grp-cell-A{border-color:rgba(255,179,179,.4);}
+.uma-cell.grp-cell-A .up{color:#ff8a8a;}
+.uma-cell.grp-cell-B{border-color:rgba(45,106,79,.5);}
+.uma-cell.grp-cell-B .up{color:#7fc99b;}
+.uma-cell.grp-cell-C{border-color:rgba(255,238,136,.4);}
+.uma-cell.grp-cell-C .up{color:#ffee88;}
+
+.section-divider{border-top:1px solid var(--bd);margin:14px 0 10px;padding-top:10px;}
 </style>
 </head>
 <body>
@@ -126,7 +162,41 @@ textarea:focus{border-color:var(--go);}
   <div class="card">
     <div class="ctitle"><span id="resultLabel">1R</span> 枠番 単独人気（1〜8枠）</div>
     <div class="franking" id="frankList"></div>
-    <div class="note">① 各枠の「出現順位リスト」を作成（昇順）<br>② 1位が同じなら2位、それも同じなら3位…と早く出た枠を上位人気に決定（8枠全てを同じルールで比較）</div>
+    <div class="note">① 各枠の「出現順位リスト」を作成（昇順）<br>② 1位が同じなら2位、それも同じなら3位…と早く出た枠を上位人気に決定（8枠全てを同じルールで比較）<br>③ A群=1〜3位／B群=4〜6位／C群=7〜8位</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">STEP 2：レース結果を貼り付け（着順・馬番人気を自動判定）</div>
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:6px;">レジまぐ／JRA公式の結果テキストをそのまま貼り付け。1着・2着・3着の枠番、複勝人気（馬番人気）を自動で読み取ります。</div>
+    <textarea id="taResult" style="height:160px;" placeholder="レジまぐ等から、このレースの結果（着順・枠・馬番・払戻など）をそのまま貼り付けてください"></textarea>
+    <button class="btn btn-gold" onclick="runResultParse()">▶ 結果を読み込んでA/B/C群を判定する</button>
+    <div id="resultSt" class="status"></div>
+    <div class="finish-result" id="finishResult"></div>
+
+    <div style="margin-top:12px;">
+      <div style="font-size:10px;color:var(--tx2);margin-bottom:6px;">うまく読み取れない場合は手入力でも判定できます↓</div>
+      <div class="finish-row">
+        <div class="finish-box"><label>1着 枠番</label><input type="number" id="finF1" min="1" max="8" placeholder="例:3"></div>
+        <div class="finish-box"><label>2着 枠番</label><input type="number" id="finF2" min="1" max="8" placeholder="例:5"></div>
+        <div class="finish-box"><label>3着 枠番</label><input type="number" id="finF3" min="1" max="8" placeholder="例:8"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="runFinish()">▶ 手入力でA/B/C群を判定する</button>
+      <div id="finSt" class="status"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">STEP 3：馬番人気（任意・別途オッズ表でも算出可）</div>
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:6px;">STEP2の結果貼り付けで自動取得済みなら不要です。別途オッズ表を貼りたい場合はこちら：人気　枠番　馬番　馬名…</div>
+    <textarea id="taUma" style="height:120px;" placeholder="人気	枠	馬番	馬名	単勝
+1	5	8	○○○○	2.1
+2	3	5	○○○○	4.5
+...
+の形式で貼り付けてください"></textarea>
+    <button class="btn btn-gold" onclick="runUmaConvert()">▶ オッズ表から馬番人気を算出する</button>
+    <div id="umaSt" class="status"></div>
+    <div class="uma-grid" id="umaGrid"></div>
+    <div class="note">馬番A群=1〜3位／B群=4〜8位／C群=9位以降</div>
   </div>
 </div>
 
@@ -139,7 +209,23 @@ textarea:focus{border-color:var(--go);}
 let venues = ['東京'];
 let currentVenue = '東京';
 let currentRace = 1;
-const allData = { '東京': {} }; // { venueName: {1:[frames], 2:[frames], ...} }
+// raceEntry = { frames:[1〜8枠の人気順], finish:[f1,f2,f3]またはnull, umaPop:{uma:pop,...}またはnull }
+const allData = { '東京': {} }; // { venueName: {1:raceEntry, 2:{...}, ...} }
+
+// 枠番人気の順位からA/B/C群を判定（A:1-3位 B:4-6位 C:7-8位）
+function frameGroup(rank){
+  if(rank>=1 && rank<=3) return 'A';
+  if(rank>=4 && rank<=6) return 'B';
+  if(rank>=7 && rank<=8) return 'C';
+  return null;
+}
+// 馬番人気の順位からA/B/C群を判定（A:1-3位 B:4-8位 C:9位以降）
+function umaGroup(rank){
+  if(rank>=1 && rank<=3) return 'A';
+  if(rank>=4 && rank<=8) return 'B';
+  if(rank>=9) return 'C';
+  return null;
+}
 
 function initVenuePills(){
   const el = document.getElementById('venuePills');
@@ -201,7 +287,7 @@ function selectVenue(v){
   document.getElementById('st').style.display = 'none';
   initVenuePills();
   initRacePills();
-  if(allData[v][1]){ showResult(1); } else { document.getElementById('result').style.display='none'; }
+  loadRaceUI(1);
   renderRaceGrid();
 }
 
@@ -223,13 +309,38 @@ function selectRace(r){
   document.getElementById('raceLabel').textContent = r+'R';
   document.getElementById('ta').value = '';
   document.getElementById('st').style.display = 'none';
-  const rd = allData[currentVenue];
-  if(rd[r]){
+  initRacePills();
+  loadRaceUI(r);
+}
+
+// レース選択時にそのレースの枠番人気・着順・馬番人気の表示/入力欄を復元
+function loadRaceUI(r){
+  const entry = allData[currentVenue][r];
+  document.getElementById('taResult').value = '';
+  document.getElementById('resultSt').style.display = 'none';
+  document.getElementById('finF1').value = '';
+  document.getElementById('finF2').value = '';
+  document.getElementById('finF3').value = '';
+  document.getElementById('finSt').style.display = 'none';
+  document.getElementById('finishResult').innerHTML = '';
+  document.getElementById('taUma').value = '';
+  document.getElementById('umaSt').style.display = 'none';
+  document.getElementById('umaGrid').innerHTML = '';
+
+  if(entry && entry.frames){
     showResult(r);
+    if(entry.finish){
+      document.getElementById('finF1').value = entry.finish[0] || '';
+      document.getElementById('finF2').value = entry.finish[1] || '';
+      document.getElementById('finF3').value = entry.finish[2] || '';
+      renderFinishResult(entry.frames, entry.finish);
+    }
+    if(entry.umaPop){
+      renderUmaGrid(entry.umaPop);
+    }
   } else {
     document.getElementById('result').style.display = 'none';
   }
-  initRacePills();
 }
 
 function showSt(id,msg,type){
@@ -244,6 +355,14 @@ function clearCurrent(){
   document.getElementById('ta').value='';
   document.getElementById('st').style.display='none';
   document.getElementById('result').style.display='none';
+  document.getElementById('taResult').value='';
+  document.getElementById('resultSt').style.display='none';
+  document.getElementById('finF1').value='';
+  document.getElementById('finF2').value='';
+  document.getElementById('finF3').value='';
+  document.getElementById('finishResult').innerHTML='';
+  document.getElementById('taUma').value='';
+  document.getElementById('umaGrid').innerHTML='';
   initRacePills();
   renderRaceGrid();
 }
@@ -304,8 +423,9 @@ function runConvert(){
   const frames = [1,2,3,4,5,6,7,8];
   frames.sort((a,b)=>lexCompare(appear[a], appear[b]));
 
-  // このレースの結果を保存
-  allData[currentVenue][currentRace] = frames;
+  // このレースの結果を保存（既存の着順・馬番人気データがあれば保持）
+  const prev = allData[currentVenue][currentRace] || {};
+  allData[currentVenue][currentRace] = { frames, finish: prev.finish || null, umaPop: prev.umaPop || null };
 
   showResult(currentRace, rows, appear);
   showSt('st', `${currentVenue} ${currentRace}R：${rows.length}件の組番データを解析し、枠番人気を算出しました`, 'ok');
@@ -314,14 +434,17 @@ function runConvert(){
 }
 
 function showResult(raceNum, rows, appear){
-  const frames = allData[currentVenue][raceNum];
-  if(!frames) return;
+  const entry = allData[currentVenue][raceNum];
+  if(!entry || !entry.frames) return;
+  const frames = entry.frames;
   document.getElementById('resultLabel').textContent = raceNum+'R';
 
   let html='';
   frames.forEach((frame,idx)=>{
     const rank = idx+1;
     const isTop = idx===0;
+    const grp = frameGroup(rank);
+    const grpBadge = grp ? `<span class="grp-badge grp-${grp}">${grp}群</span>` : '';
     let reasonHtml='';
     if(appear){
       const ranks = appear[frame];
@@ -343,10 +466,229 @@ function showResult(raceNum, rows, appear){
       <div class="frank">${rank}</div>
       <div class="fframe">${frame}枠</div>
       <div class="fmeta">${reasonHtml}</div>
+      ${grpBadge}
     </div>`;
   });
   document.getElementById('frankList').innerHTML = html;
   document.getElementById('result').style.display='block';
+}
+
+// ===== レース結果テキスト解析（v24のparseTextロジックを単一レース用に簡略化） =====
+// 貼り付けたテキストから「1着・2着・3着の枠番」と「複勝人気（馬番人気）」を抽出する
+function parseRaceResultText(txt){
+  let result = { rows: [], pop1: 0, pop2: 0, pop3: 0 };
+  let inResultTable = false, inTansho = false, inFukusho = false, fukushoCnt = 0;
+
+  // v24と同じ前処理
+  txt = txt.replace(/枠(\d)[白黒赤青黄緑橙桃]/g, '$1');
+  txt = txt.replace(/（着差）/g, '').replace(/\(着差\)/g, '');
+  txt = txt.replace(/レース結果\nレース結果/g, 'レース結果');
+  txt = txt.replace(/ページトップへ戻る/g, '');
+
+  // JRA直接コピペ対応：「1」「6」「11　馬名...」の3行を1行に結合
+  const rawLines = txt.split('\n');
+  const mergedLines = [];
+  for(let i=0;i<rawLines.length;i++){
+    const cur = rawLines[i].trim();
+    const next = i+1 < rawLines.length ? rawLines[i+1].trim() : '';
+    const next2 = i+2 < rawLines.length ? rawLines[i+2].trim() : '';
+    const curOrd = cur.match(/^([123])\t?$/);
+    const nextFrame = next.match(/^([1-8])$/);
+    const next2Num = next2.match(/^(\d{1,2})\t/);
+    if(curOrd && nextFrame && next2Num){
+      mergedLines.push(curOrd[1]+'\t'+nextFrame[1]+'\t'+next2);
+      i+=2;
+      continue;
+    }
+    mergedLines.push(rawLines[i]);
+  }
+  const lines = mergedLines;
+
+  for(let i=0;i<lines.length;i++){
+    const l = lines[i].trim();
+    if(!l) continue;
+    if(l.match(/^\d+\/\d+/)) continue;
+    if(l.match(/^（[日月火水木金土]）/)) continue;
+    if(l.match(/^\d{4}年\d+月\d+日/)) continue;
+    if(l.match(/^\[中央競馬.*\]\(http/)) continue;
+    if(l.match(/^着順[\t\s]+枠[\t\s]+馬番/)) continue;
+    if(l.match(/^R[\t\s]/)) continue;
+    if(l.match(/^\d{1,2}R/)) continue; // レース番号行はスキップ（1レース分のみ扱うため）
+    if(l.match(/^東京$|^中山$|^阪神$|^京都$|^中京$|^小倉$|^函館$|^札幌$|^新潟$|^福島$/)) continue;
+    if(l==='レース結果'||l==='結果'){ inResultTable=true; continue; }
+    if(l==='払戻金'||l==='結果払戻'||l.startsWith('結果払戻')||l==='¥ 払戻金'){ inResultTable=false; continue; }
+    if(l==='単勝'||l.startsWith('単勝\t')){
+      inResultTable=false;
+      const tmInline = l.match(/単勝[\t\s]+\d+[\t\s]+[\d,]+円[\t\s]+(\d+)番人気/);
+      if(tmInline){ result.pop1 = parseInt(tmInline[1]); }
+      else { inTansho = true; }
+      continue;
+    }
+    if(l.includes('着順')&&l.includes('枠')&&l.includes('馬番')) continue;
+
+    if(inResultTable){
+      const t = l.split('\t');
+      if(t.length>=3){
+        const ord=parseInt(t[0]), frame=parseInt(t[1]), num=parseInt(t[2]);
+        if(!isNaN(ord)&&!isNaN(frame)&&!isNaN(num)&&ord>=1&&ord<=3&&frame>=1&&frame<=8&&num>=1&&num<=18){
+          if(!result.rows.find(r=>r.ord===ord)) result.rows.push({ord,frame,num});
+        }
+      }
+      continue;
+    }
+
+    // JRA形式：「着順 枠 馬番 馬名 タイム」の4列形式（inResultTableに入る前の見出し直後の行）
+    {
+      const t = l.split('\t');
+      if(t.length>=4){
+        const ord=parseInt(t[0]), frame=parseInt(t[1]), num=parseInt(t[2]);
+        const hasName = t[3] && isNaN(parseInt(t[3].trim()));
+        if(!isNaN(ord)&&!isNaN(frame)&&!isNaN(num)&&ord>=1&&ord<=3&&frame>=1&&frame<=8&&num>=1&&num<=18&&hasName&&result.rows.length<3&&!result.rows.find(r=>r.ord===ord)){
+          result.rows.push({ord,frame,num});
+          continue;
+        }
+      }
+    }
+
+    if(!inResultTable){
+      const tmJRA = l.match(/^(\d+)[\t\s]+[\d,]+円[\t\s]+(\d+)番人気$/);
+      if(tmJRA){
+        const p = parseInt(tmJRA[2]);
+        if(inTansho){ if(!result.pop1){ result.pop1=p; inTansho=false; } continue; }
+        if(inFukusho){
+          fukushoCnt++;
+          if(fukushoCnt===1) result.pop1=p;
+          else if(fukushoCnt===2) result.pop2=p;
+          else if(fukushoCnt===3){ result.pop3=p; inFukusho=false; }
+          continue;
+        }
+      }
+      if((l==='単勝'||l.startsWith('単勝\t'))){ inTansho=false; inFukusho=false; fukushoCnt=0; continue; }
+      if((l==='複勝'||l.startsWith('複勝\t'))){ inFukusho=true; inTansho=false; fukushoCnt=0; }
+      const popLineM = l.match(/^(\d+)番人気$/);
+      if(popLineM){
+        const p = parseInt(popLineM[1]);
+        if(!result.pop2) result.pop2=p;
+        else if(!result.pop3) result.pop3=p;
+        continue;
+      }
+    }
+  }
+  return result;
+}
+
+// ===== STEP 2：レース結果テキストを貼り付け → 着順・馬番人気を自動取得してA/B/C判定 =====
+function runResultParse(){
+  const entry = allData[currentVenue][currentRace];
+  if(!entry || !entry.frames){ showSt('resultSt','先にSTEP1で枠番人気を算出してください','warn'); return; }
+  const txt = document.getElementById('taResult').value;
+  if(!txt.trim()){ showSt('resultSt','レース結果を貼り付けてください','warn'); return; }
+
+  const parsed = parseRaceResultText(txt);
+  if(!parsed.rows.length){ showSt('resultSt','着順を読み取れませんでした。手入力をお試しください','warn'); return; }
+
+  const sorted = [...parsed.rows].sort((a,b)=>a.ord-b.ord);
+  const finish = sorted.map(r=>r.frame);
+  entry.finish = finish;
+  renderFinishResult(entry.frames, finish);
+
+  // 複勝人気（1着・2着・3着の馬番人気）を馬番人気グリッドにも反映
+  let umaMsg = '';
+  if(parsed.pop1 || parsed.pop2 || parsed.pop3){
+    const umaPop = entry.umaPop || {};
+    const umas = sorted.map(r=>r.num);
+    if(umas[0] && parsed.pop1) umaPop[umas[0]] = parsed.pop1;
+    if(umas[1] && parsed.pop2) umaPop[umas[1]] = parsed.pop2;
+    if(umas[2] && parsed.pop3) umaPop[umas[2]] = parsed.pop3;
+    entry.umaPop = umaPop;
+    renderUmaGrid(umaPop);
+    umaMsg = `／馬番人気${Object.keys(umaPop).length}頭分を取得`;
+  }
+
+  showSt('resultSt', `${currentRace}Rの結果を読み取りました（${sorted.length}着分）${umaMsg}`, 'ok');
+  renderRaceGrid();
+}
+
+// ===== STEP 2：着順（1着・2着・3着の枠番）→ A/B/C群判定 =====
+function runFinish(){
+  const entry = allData[currentVenue][currentRace];
+  if(!entry || !entry.frames){ showSt('finSt','先にSTEP1で枠番人気を算出してください','warn'); return; }
+  const f1 = parseInt(document.getElementById('finF1').value);
+  const f2 = parseInt(document.getElementById('finF2').value);
+  const f3 = parseInt(document.getElementById('finF3').value);
+  if(!f1 || !f2){ showSt('finSt','1着・2着の枠番は必須です','warn'); return; }
+  const finish = [f1, f2, f3 || 0].filter(x=>x>0);
+  entry.finish = finish;
+  renderFinishResult(entry.frames, finish);
+  showSt('finSt', `${currentRace}Rの着順を登録しました`, 'ok');
+  renderRaceGrid();
+}
+
+function renderFinishResult(frames, finish){
+  const ordLabels = ['1着','2着','3着'];
+  let html = '';
+  finish.forEach((frame, i)=>{
+    const rank = frames.indexOf(frame) + 1; // 1-indexed rank in the frame popularity list
+    const grp = rank>0 ? frameGroup(rank) : null;
+    const grpBadge = grp ? `<span class="grp-badge grp-${grp}">${grp}群</span>` : '<span class="grp-badge grp-none">判定不可</span>';
+    const rankText = rank>0 ? `枠番人気 ${rank}位` : '枠番人気データなし';
+    html += `<div class="finish-result-row">
+      <div class="ford">${ordLabels[i]}</div>
+      <div class="ffrm">${frame}枠</div>
+      <div class="frank-sm">${rankText}</div>
+      ${grpBadge}
+    </div>`;
+  });
+  document.getElementById('finishResult').innerHTML = html;
+}
+
+// ===== STEP 3：馬番人気（単勝オッズ表）→ A/B/C群判定 =====
+function parseUmaOddsTable(txt){
+  // v24と同じ「人気 枠番 馬番 馬名 ...」または「人気 馬番 馬名 ...」形式に対応
+  const lines = txt.replace(/\r/g,'').split('\n');
+  const popMap = {};
+  lines.forEach(line=>{
+    const t = line.split(/\t/);
+    if(t.length < 2) return;
+    const pop = parseInt(t[0].trim());
+    if(isNaN(pop) || pop<1 || pop>18) return;
+    let uma = -1;
+    if(t[1] && t[1].trim().match(/^枠[1-8]/)){
+      uma = t[2] ? parseInt(t[2].trim()) : -1;
+    } else {
+      uma = parseInt(t[1].trim());
+    }
+    if(!isNaN(uma) && uma>=1 && uma<=18) popMap[uma] = pop;
+  });
+  return popMap;
+}
+
+function runUmaConvert(){
+  const entry = allData[currentVenue][currentRace];
+  if(!entry || !entry.frames){ showSt('umaSt','先にSTEP1で枠番人気を算出してください','warn'); return; }
+  const txt = document.getElementById('taUma').value;
+  if(!txt.trim()){ showSt('umaSt','オッズ表を貼り付けてください','warn'); return; }
+  const popMap = parseUmaOddsTable(txt);
+  if(Object.keys(popMap).length < 3){ showSt('umaSt','読み取れた馬番が少なすぎます','warn'); return; }
+  entry.umaPop = popMap;
+  renderUmaGrid(popMap);
+  showSt('umaSt', `${Object.keys(popMap).length}頭分の馬番人気を算出しました`, 'ok');
+  renderRaceGrid();
+}
+
+function renderUmaGrid(popMap){
+  let html = '';
+  for(let u=1; u<=18; u++){
+    const pop = popMap[u];
+    const grp = pop ? umaGroup(pop) : null;
+    const cls = grp ? `grp-cell-${grp}` : '';
+    html += `<div class="uma-cell ${cls}">
+      <div class="un">${u}番</div>
+      <div class="up">${pop ? pop+'位' : '-'}</div>
+      ${grp ? `<div style="margin-top:3px;"><span class="grp-badge grp-${grp}" style="font-size:9px;padding:1px 6px;">${grp}</span></div>` : ''}
+    </div>`;
+  }
+  document.getElementById('umaGrid').innerHTML = html;
 }
 
 function renderRaceGrid(){
@@ -355,11 +697,20 @@ function renderRaceGrid(){
   const rd = allData[currentVenue];
   for(let r=1; r<=12; r++){
     const box = document.createElement('div');
-    const frames = rd[r];
+    const entry = rd[r];
+    const frames = entry ? entry.frames : null;
     box.className = 'rbox' + (frames?'':' empty');
     box.onclick = () => selectRace(r);
     if(frames){
-      box.innerHTML = `<div class="rn">${r}R</div><div class="rseq">${frames.map(f=>`<span class="num">${f}</span>`).join('-')}</div>`;
+      let finishBadges = '';
+      if(entry.finish && entry.finish.length){
+        finishBadges = '<div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap;">' + entry.finish.map(f=>{
+          const rank = frames.indexOf(f)+1;
+          const grp = rank>0 ? frameGroup(rank) : null;
+          return grp ? `<span class="grp-badge grp-${grp}" style="font-size:9px;padding:1px 6px;">${f}枠${grp}</span>` : '';
+        }).join('') + '</div>';
+      }
+      box.innerHTML = `<div class="rn">${r}R</div><div class="rseq">${frames.map(f=>`<span class="num">${f}</span>`).join('-')}</div>${finishBadges}`;
     } else {
       box.innerHTML = `<div class="rn">${r}R</div><div class="rempty">未入力</div>`;
     }
@@ -370,13 +721,15 @@ function renderRaceGrid(){
 // ===== CSV保存・読み込み（1日分・全会場まとめて）=====
 function exportCSV(){
   let hasData = false;
-  let csv = '会場,レース,1人気枠,2人気枠,3人気枠,4人気枠,5人気枠,6人気枠,7人気枠,8人気枠\n';
+  let csv = '会場,レース,1人気枠,2人気枠,3人気枠,4人気枠,5人気枠,6人気枠,7人気枠,8人気枠,1着枠,2着枠,3着枠,馬番人気\n';
   venues.forEach(v=>{
     for(let r=1; r<=12; r++){
-      const frames = allData[v][r];
-      if(frames){
+      const entry = allData[v][r];
+      if(entry && entry.frames){
         hasData = true;
-        csv += `${v},${r}R,${frames.join(',')}\n`;
+        const finish = entry.finish || [];
+        const umaPopStr = entry.umaPop ? Object.entries(entry.umaPop).map(([u,p])=>`${u}:${p}`).join('|') : '';
+        csv += `${v},${r}R,${entry.frames.join(',')},${finish[0]||''},${finish[1]||''},${finish[2]||''},${umaPopStr}\n`;
       }
     }
   });
@@ -409,7 +762,26 @@ function importCSV(input){
       const frames = cols.slice(2,10).map(x=>parseInt(x.trim())).filter(x=>!isNaN(x));
       if(!venue || isNaN(rNum) || frames.length < 8) return;
       if(!newData[venue]){ newData[venue] = {}; newVenues.push(venue); }
-      newData[venue][rNum] = frames;
+
+      // 着順（1着・2着・3着の枠番）：11,12,13列目
+      const finish = [];
+      for(let i=10;i<=12;i++){
+        const v = cols[i] ? parseInt(cols[i].trim()) : NaN;
+        if(!isNaN(v) && v>0) finish.push(v);
+      }
+
+      // 馬番人気：14列目（"馬番:人気|馬番:人気|..."形式）
+      let umaPop = null;
+      if(cols[13] && cols[13].trim()){
+        umaPop = {};
+        cols[13].trim().split('|').forEach(pair=>{
+          const [u,p] = pair.split(':').map(x=>parseInt(x));
+          if(!isNaN(u) && !isNaN(p)) umaPop[u] = p;
+        });
+        if(!Object.keys(umaPop).length) umaPop = null;
+      }
+
+      newData[venue][rNum] = { frames, finish: finish.length ? finish : null, umaPop };
     });
     if(!newVenues.length){ showSt('csvStatus','CSVを読み込めませんでした','warn'); return; }
     venues = newVenues;
